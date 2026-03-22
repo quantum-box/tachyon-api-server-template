@@ -1,0 +1,27 @@
+{
+  "name": "tachyon-api-server-template",
+  "version": "0.1.0",
+  "description": "Simple API server template for Tachyon Compute (AWS Lambda + Function URL)",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "node scripts/build.mjs",
+    "start": "node dist/index.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.11",
+    "hono": "^4.7.0"
+  },
+  "devDependencies": {
+    "@types/archiver": "^7.0.0",
+    "@types/node": "^22.0.0",
+    "archiver": "^7.0.1",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}
