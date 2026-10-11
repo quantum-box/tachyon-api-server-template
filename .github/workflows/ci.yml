@@ -1,0 +1,31 @@
+name: Sample CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - name: Check Lambda artifact and handler
+        env:
+          NODE_ENV: production
+        run: |
+          unzip -t lambda.zip
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import { handler } from './dist/index.mjs';
+          const response = await handler({version:'2.0',routeKey:'GET /',rawPath:'/',rawQueryString:'',headers:{host:'localhost'},requestContext:{http:{method:'GET',path:'/',sourceIp:'127.0.0.1',userAgent:'sample-ci'}}}, {});
+          assert.equal(response.statusCode, 200);
+          assert.equal(JSON.parse(response.body).status, 'ok');
+          JS
