@@ -22,7 +22,7 @@ jobs:
           node-version: '22'
       # Install the language/toolchain needed by this app here.
       # Pin the Action to the reviewed implementation commit before use.
-      - uses: quantum-box/tachyon-ops-action/cloud-app-build@c24e38d42768f26fb854ee69fdca21a4ef851ea6
+      - uses: quantum-box/tachyon-ops-action/cloud-app-build@4b38de784efc6797fb160779a50a14bae810b2f1
         with:
           api-url: https://api.n1.tachy.one
           build-id: ${{ inputs.build_id }}
