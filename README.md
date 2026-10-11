@@ -93,3 +93,19 @@ Environment variables are configured through Tachyon Compute's environment setti
 ## License
 
 MIT
+
+## Tachyon GitHub Actions build
+
+`.github/workflows/tachyon-build.yml` runs builds requested by Tachyon. It pins
+[`quantum-box/tachyon-ops-action/cloud-app-build`](https://github.com/quantum-box/tachyon-ops-action/tree/main/cloud-app-build)
+to a reviewed commit and uses GitHub OIDC, so no Tachyon API key or AWS credential
+is stored in this repository. The only dispatch input is the Tachyon build ID.
+Tachyon selects the exact source commit, receives `lambda.zip`, and deploys Lambda.
+
+Configure the Cloud App with `installCommand: npm ci`, `command: npm run build`,
+`outputDirectory: lambda.zip`, and `runnerBackend: github_actions`. An operator
+must register the app/repository/workflow binding on the Tachyon API first.
+Start builds through Tachyon; directly dispatching an arbitrary build ID or
+rerunning a GitHub run cannot authenticate as an authorized Tachyon build.
+
+The separate Sample CI workflow validates packaging and the handler on pull requests.
