@@ -1,0 +1,30 @@
+apiVersion: apps.tachy.one/v1alpha
+kind: CloudApps
+metadata:
+  name: tachyon-api-server-template
+spec:
+  apps:
+    - name: node-api-server-sample
+      framework: serverless_functions
+      deploymentTarget: lambda
+      httpServing: true
+      build:
+        runnerBackend: github_actions
+        installCommand: npm ci
+        command: npm run build
+        outputDirectory: lambda.zip
+        nodeVersion: "22"
+    - name: rust-api-server-sample
+      rootDirectory: apps/rust-api
+      framework: cargo_lambda
+      deploymentTarget: lambda
+      httpServing: true
+      build:
+        runnerBackend: github_actions
+        installCommand: cargo fetch --locked
+        command: cargo lambda build --release --bin rust-api
+        outputDirectory: target/lambda/rust-api
+        package: tachyon-rust-api-sample
+        binary: rust-api
+        release: true
+        arch: x86_64

@@ -1,6 +1,6 @@
 # Tachyon API Server Template
 
-Simple API server template for [Tachyon Compute](https://txcloud.app). Deploys to AWS Lambda with Function URL.
+Node.js and Rust API server examples for [Tachyon Cloud Apps](https://txcloud.app). Both deploy to AWS Lambda and expose HTTP endpoints.
 
 Built with [Hono](https://hono.dev/) - a lightweight, fast web framework that runs on Lambda, Cloudflare Workers, Node.js, and more.
 
@@ -36,21 +36,47 @@ This creates:
 - `dist/index.mjs` - Bundled ESM module
 - `lambda.zip` - Ready-to-deploy Lambda package
 
-### Lambda Configuration
+## Rust Lambda example
+
+`apps/rust-api` is a native Rust HTTP Lambda using `lambda_http` and Cargo Lambda.
+Its handler returns JSON from `/` and `/hello?name=Alice`; the package contains
+an executable `bootstrap` at the ZIP root and targets x86_64 Lambda.
+
+```bash
+cd apps/rust-api
+cargo test --locked
+cargo lambda build --release --bin rust-api
+```
+
+The pinned Cargo Lambda image used by GitHub Actions builds the binary and
+uploads `target/lambda/rust-api` as the Tachyon artifact. Tachyon handles the
+Lambda deployment after the build completes.
+
+### Node.js Lambda Configuration
 
 | Setting | Value |
 |---------|-------|
 | Runtime | Node.js 22.x |
-| Architecture | arm64 |
+| Architecture | x86_64 |
 | Handler | `index.handler` |
 | Memory | 256 MB (recommended) |
 | Timeout | 30 seconds |
 
-## Deploy with Tachyon Compute
+The GitHub Actions backend currently targets `x86_64` for both samples. The
+Rust app uses the `provided.al2023` runtime and `bootstrap` handler declared in
+`tachyon.yml`.
 
-1. Fork this repository
-2. Connect it to Tachyon Compute with `deployment_target: lambda`
-3. Push to your default branch to trigger a build and deploy
+## Deploy with Tachyon Cloud Apps
+
+1. Fork this repository and connect the fork to Tachyon.
+2. Apply the root `tachyon.yml` with `tachyon apply -f tachyon.yml`. It declares
+   `node-api-server-sample` and `rust-api-server-sample` with the
+   `github_actions` runner backend.
+3. Register `.github/workflows/tachyon-build.yml` for each app in Tachyon.
+   Start builds from Tachyon so the action receives an authorized build ID.
+
+The GitHub workflow deliberately omits `api-url`; the action defaults to
+`https://api.n1.tachy.one`. No API token or AWS credential is stored in GitHub.
 
 ## Project Structure
 
@@ -62,6 +88,10 @@ src/
     └── hello.ts    # Example route module
 scripts/
 └── build.mjs       # esbuild bundler + ZIP creator
+apps/rust-api/
+├── Cargo.toml      # Rust Lambda package
+├── Cargo.lock      # Locked Rust dependencies
+└── src/main.rs     # Lambda handler and unit tests
 ```
 
 ## Adding Routes
@@ -102,10 +132,12 @@ to a reviewed commit and uses GitHub OIDC, so no Tachyon API key or AWS credenti
 is stored in this repository. The only dispatch input is the Tachyon build ID.
 Tachyon selects the exact source commit, receives `lambda.zip`, and deploys Lambda.
 
-Configure the Cloud App with `installCommand: npm ci`, `command: npm run build`,
-`outputDirectory: lambda.zip`, and `runnerBackend: github_actions`. An operator
-must register the app/repository/workflow binding on the Tachyon API first.
-Start builds through Tachyon; directly dispatching an arbitrary build ID or
+The Node app uses `npm ci` and `npm run build`. The Rust app uses
+`cargo fetch --locked` and `cargo lambda build --release --bin rust-api`.
+Both commands and output paths are declared in `tachyon.yml`. The workflow has
+only a `build_id` dispatch input; directly dispatching an arbitrary ID or
 rerunning a GitHub run cannot authenticate as an authorized Tachyon build.
 
-The separate Sample CI workflow validates packaging and the handler on pull requests.
+The Sample CI workflow validates both Lambda packages and their handlers on
+pull requests. The Rust job uses the same digest-pinned Cargo Lambda image as
+the Tachyon Action.

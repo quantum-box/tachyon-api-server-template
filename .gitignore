@@ -1,5 +1,7 @@
 node_modules/
 dist/
 lambda.zip
+target/
+.tachyon-cargo/
 .env
 *.log

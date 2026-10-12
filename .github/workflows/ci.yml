@@ -8,7 +8,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,3 +29,29 @@ jobs:
           assert.equal(response.statusCode, 200);
           assert.equal(JSON.parse(response.body).status, 'ok');
           JS
+      - name: Build and test Rust Lambda
+        run: |
+          docker run --rm --platform=linux/amd64 --cpus=2 --memory=4g --memory-swap=4g \
+            --cap-drop=ALL --security-opt=no-new-privileges \
+            --user "$(id -u):$(id -g)" \
+            --mount "type=bind,source=$GITHUB_WORKSPACE,target=/workspace" \
+            --workdir /workspace/apps/rust-api \
+            --tmpfs '/.cache:rw,exec,nosuid,size=1g,mode=1777' \
+            --env 'HOME=/tmp' \
+            --env 'CI=true' \
+            --env 'PATH=/usr/local/rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin:/cargo-lambda:/zig:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' \
+            --env 'RUSTUP_HOME=/usr/local/rustup' \
+            --env 'CARGO_HOME=/workspace/.tachyon-cargo' \
+            --entrypoint /bin/bash \
+            ghcr.io/cargo-lambda/cargo-lambda:1.9.2@sha256:02f2b32c5474b7c8bbf7e2432c609c1ab861a68cde471ba74857a4b4eefe8d07 \
+            --noprofile --norc -eo pipefail -c '
+              cargo test --locked
+              cargo lambda build --release --bin rust-api
+            '
+      - name: Check Cargo Lambda artifact
+        run: |
+          test -x apps/rust-api/target/lambda/rust-api/bootstrap
+          file apps/rust-api/target/lambda/rust-api/bootstrap | grep -E 'ELF 64-bit LSB.*x86-64'
+          (cd apps/rust-api/target/lambda/rust-api && zip -q -r "$GITHUB_WORKSPACE/rust-lambda.zip" bootstrap)
+          unzip -t rust-lambda.zip
+          unzip -Z -1 rust-lambda.zip | grep -Fx bootstrap
