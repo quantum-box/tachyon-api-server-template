@@ -69,14 +69,40 @@ Rust app uses the `provided.al2023` runtime and `bootstrap` handler declared in
 ## Deploy with Tachyon Cloud Apps
 
 1. Fork this repository and connect the fork to Tachyon.
-2. Apply the root `tachyon.yml` with `tachyon apply -f tachyon.yml`. It declares
-   `node-api-server-sample` and `rust-api-server-sample` with the
-   `github_actions` runner backend.
-3. Register `.github/workflows/tachyon-build.yml` for each app in Tachyon.
-   Start builds from Tachyon so the action receives an authorized build ID.
+2. The Node declaration is named `gha-api-server-sample` and includes this
+   repository's URL, owner, name, and default branch. Apply it with
+   `tachyon compute apps apply -f tachyon.yml --app gha-api-server-sample`
+   and `--tenant-id "$TACHYON_TENANT_ID"`. The Rust declaration is a separate app named
+   `rust-api-server-sample`; apply it after the Tachyon API release supports
+   the `cargo_lambda` framework.
+3. Register `.github/workflows/tachyon-build.yml` for each Cloud App in Tachyon.
+   Create builds through Tachyon with `runner_backend: github_actions`; Tachyon
+   dispatches the workflow with an authorized build ID.
+
+For example, from a trusted local shell (keep the token out of GitHub):
+
+```bash
+API_URL="${TACHYON_API_URL:-https://api.n1.tachy.one}"
+SOURCE_BRANCH="${TACHYON_SOURCE_BRANCH:-main}"
+COMMIT_SHA="$(git rev-parse HEAD)"
+curl --fail-with-body --silent --show-error \
+  -X POST "$API_URL/v1/apps/$TACHYON_APP_ID/builds" \
+  -H "Authorization: Bearer ${TACHYON_AUTH_TOKEN:?set outside GitHub}" \
+  -H "x-operator-id: ${TACHYON_TENANT_ID:?set outside GitHub}" \
+  -H "Content-Type: application/json" \
+  --data "$(jq -n --arg branch "$SOURCE_BRANCH" --arg sha "$COMMIT_SHA" \
+    '{source_branch:$branch,commit_sha:$sha,runner_backend:"github_actions"}')"
+```
+
+The returned build ID is dispatched to the registered workflow. A PR can use
+its source branch and head SHA in the request when a preview build is desired.
 
 The GitHub workflow deliberately omits `api-url`; the action defaults to
 `https://api.n1.tachy.one`. No API token or AWS credential is stored in GitHub.
+`github_actions` is selected on the Tachyon build request, not in `tachyon.yml`.
+The build API request uses `source_branch`, the full 40-character `commit_sha`,
+and `runner_backend: github_actions`; this action's `api-url` input is omitted
+because its default is `https://api.n1.tachy.one`.
 
 ## Project Structure
 

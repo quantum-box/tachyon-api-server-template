@@ -4,23 +4,31 @@ metadata:
   name: tachyon-api-server-template
 spec:
   apps:
-    - name: node-api-server-sample
+    - name: gha-api-server-sample
+      repository:
+        url: https://github.com/quantum-box/tachyon-api-server-template
+        owner: quantum-box
+        name: tachyon-api-server-template
+        defaultBranch: main
       framework: serverless_functions
       deploymentTarget: lambda
       httpServing: true
       build:
-        runnerBackend: github_actions
-        installCommand: npm ci
+        installCommand: npm ci --include=dev
         command: npm run build
         outputDirectory: lambda.zip
         nodeVersion: "22"
     - name: rust-api-server-sample
+      repository:
+        url: https://github.com/quantum-box/tachyon-api-server-template
+        owner: quantum-box
+        name: tachyon-api-server-template
+        defaultBranch: main
       rootDirectory: apps/rust-api
       framework: cargo_lambda
       deploymentTarget: lambda
       httpServing: true
       build:
-        runnerBackend: github_actions
         installCommand: cargo fetch --locked
         command: cargo lambda build --release --bin rust-api
         outputDirectory: target/lambda/rust-api
