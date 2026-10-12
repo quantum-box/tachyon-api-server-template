@@ -68,13 +68,15 @@ Rust app uses the `provided.al2023` runtime and `bootstrap` handler declared in
 
 ## Deploy with Tachyon Cloud Apps
 
-1. Fork this repository and connect the fork to Tachyon.
+1. This sample is connected as `quantum-box/tachyon-api-server-template`. For
+   a fork, update each `repository` block in `tachyon.yml` and connect that fork
+   to Tachyon.
 2. The Node declaration is named `gha-api-server-sample` and includes this
    repository's URL, owner, name, and default branch. Apply it with
    `tachyon compute apps apply -f tachyon.yml --app gha-api-server-sample`
-   and `--tenant-id "$TACHYON_TENANT_ID"`. The Rust declaration is a separate app named
-   `rust-api-server-sample`; apply it after the Tachyon API release supports
-   the `cargo_lambda` framework.
+   and `--tenant-id "$TACHYON_TENANT_ID"`. The Rust declaration is a separate
+   app named `rust-api-server-sample`; apply it after the Tachyon API release
+   supports the `cargo_lambda` framework.
 3. Register `.github/workflows/tachyon-build.yml` for each Cloud App in Tachyon.
    Create builds through Tachyon with `runner_backend: github_actions`; Tachyon
    dispatches the workflow with an authorized build ID.
@@ -94,8 +96,7 @@ curl --fail-with-body --silent --show-error \
     '{source_branch:$branch,commit_sha:$sha,runner_backend:"github_actions"}')"
 ```
 
-The returned build ID is dispatched to the registered workflow. A PR can use
-its source branch and head SHA in the request when a preview build is desired.
+The returned build ID is dispatched to the registered workflow.
 
 The GitHub workflow deliberately omits `api-url`; the action defaults to
 `https://api.n1.tachy.one`. No API token or AWS credential is stored in GitHub.
